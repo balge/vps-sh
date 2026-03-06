@@ -12,7 +12,7 @@ CONFIG_FILE="${CONFIG_DIR}/frps.toml"
 SYSTEMD_UNIT="/etc/systemd/system/frps.service"
 
 die() { echo "[ERROR] $*" >&2; exit 1; }
-info() { echo "[INFO] $*"; }
+info() { echo "[INFO] $*" >&2; }
 
 # ---- 1. 前置检查与环境 ----
 check_root() {

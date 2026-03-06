@@ -5,7 +5,16 @@
 set -e
 
 die() { echo "[ERROR] $*" >&2; exit 1; }
-info() { echo "[INFO] $*"; }
+info() { echo "[INFO] $*" >&2; }
+
+# 将路径转为绝对路径并确保目录存在（含父目录）；相对路径按根路径解析，如 home/volumes/lucky -> /home/volumes/lucky
+ensure_absolute_dir() {
+  local dir="$1"
+  [ -z "$dir" ] && return 0
+  [[ "$dir" != /* ]] && dir="/$dir"
+  mkdir -p "$dir"
+  echo "$dir"
+}
 
 # ---- 1. 前置检查 ----
 check_root() {
@@ -65,7 +74,8 @@ install_portainer() {
   --restart=always \
   -v /var/run/docker.sock:/var/run/docker.sock"
   if [ -n "$mount_dir" ]; then
-    mkdir -p "$mount_dir"
+    mount_dir="$(ensure_absolute_dir "$mount_dir")"
+    info "使用目录: $mount_dir"
     run_cmd="${run_cmd} \
   -v ${mount_dir}:/data"
   fi
@@ -97,8 +107,12 @@ install_lucky() {
   fi
   echo -n "Lucky 证书目录 [可选，直接回车跳过]: "
   read -r cert_dir
-  mkdir -p "$mount_dir"
-  [ -n "$cert_dir" ] && mkdir -p "$cert_dir"
+  mount_dir="$(ensure_absolute_dir "$mount_dir")"
+  info "使用目录: $mount_dir"
+  if [ -n "$cert_dir" ]; then
+    cert_dir="$(ensure_absolute_dir "$cert_dir")"
+    info "使用目录: $cert_dir"
+  fi
   local run_cmd="docker run -d \
   --name lucky \
   --restart=unless-stopped \
@@ -121,8 +135,8 @@ install_wxchat() {
     info "容器 wxchat 已存在，跳过"
     return 0
   fi
-  local host_port=80
-  echo -n "WxChat 端口映射 [默认 80，直接回车使用默认]: "
+  local host_port=38090
+  echo -n "WxChat 端口映射 [默认 38090，直接回车使用默认]: "
   read -r p
   if [ -n "$p" ]; then
     host_port="$p"
