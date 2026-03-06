@@ -151,46 +151,7 @@ install_wxchat() {
   info "WxChat 已启动，访问 http://<本机IP>:${host_port}"
 }
 
-# ---- 7. 部署 MTProxy ----
-install_mtproxy() {
-  if docker ps -a --format '{{.Names}}' | grep -qx mtproxy; then
-    info "容器 mtproxy 已存在，跳过"
-    return 0
-  fi
-  local port_80=8080
-  local port_443=8443
-  local domain="cloudflare.com"
-  local secret="548593a9c0688f4f7d9d57377897d964"
-
-  echo -n "MTProxy 端口 80 映射 [默认 8080]: "
-  read -r p
-  [ -n "$p" ] && port_80="$p"
-  echo -n "MTProxy 端口 443 映射 [默认 8443]: "
-  read -r p
-  [ -n "$p" ] && port_443="$p"
-  echo -n "MTProxy domain [默认 cloudflare.com]: "
-  read -r p
-  [ -n "$p" ] && domain="$p"
-  echo -n "MTProxy secret [默认 548593a9c0688f4f7d9d57377897d964]: "
-  read -r p
-  [ -n "$p" ] && secret="$p"
-
-  local run_cmd="docker run -d \
-  --name mtproxy \
-  --restart=always \
-  -e domain=\"${domain}\" \
-  -e secret=\"${secret}\" \
-  -e ip_white_list=\"OFF\" \
-  -e provider=2 \
-  -p ${port_80}:80 \
-  -p ${port_443}:443 \
-  ellermister/mtproxy"
-  info "执行: $run_cmd"
-  eval "$run_cmd"
-  info "MTProxy 已启动，HTTP 端口 ${port_80}，HTTPS 端口 ${port_443}"
-}
-
-# ---- 8. 主流程 ----
+# ---- 7. 主流程 ----
 main() {
   check_root
   install_docker
@@ -214,13 +175,6 @@ main() {
     install_wxchat
   else
     info "跳过 WxChat"
-  fi
-
-  info "-------- 4. MTProxy (ellermister/mtproxy) --------"
-  if confirm_install "MTProxy"; then
-    install_mtproxy
-  else
-    info "跳过 MTProxy"
   fi
 
   info "全部完成。当前容器:"
